@@ -18,8 +18,6 @@ bot.on('message', async (msg) => {
             messages.push(`previous message ${previousLog.log} at ${previousLog.date}`);
 
         messages.push(`received message ${log.log} at ${log.date}`);
-        if (previousLog) {
-            bot.sendMessage(chatId, messages.join('\n'));
-        }
+        bot.sendMessage(chatId, messages.join('\n'));
     }
 })

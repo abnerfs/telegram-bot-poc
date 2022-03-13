@@ -1,9 +1,32 @@
 import { Log, PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient()
 
+const timeRangeFromTime = (day: Date) => {
+    const [yyyy, mm, dd] = [day.getFullYear(), day.getMonth(), day.getDate()];
+    const start = new Date(yyyy, mm, dd);
+    const end = new Date(yyyy, mm, dd + 1);
+    return { start, end };
+}
+
 export const controller = {
     async lastLog() {
 
+    },
+    async logSameDay(userId: string): Promise<string | undefined> {
+        const { start, end } = timeRangeFromTime(new Date());
+        const log = await prisma.log.findFirst({
+            where: {
+                userId,
+                date: {
+                    gte: start,
+                    lt: end
+                }
+            },
+            select: {
+                id: true
+            }
+        });
+        return log?.id;
     },
     async previousLog(currentId: string): Promise<Log | null> {
         return prisma.log.findFirst({
@@ -45,6 +68,21 @@ export const controller = {
     },
     async saveLog(telegramId: string, name: string, logText: string, createdAt: Date): Promise<Log> {
         const userId = await this.registerUser(telegramId, name);
+        const logId = await this.logSameDay(userId);
+        if (logId) {
+            return await prisma.log.update({
+                where: {
+                    id: logId
+                },
+                data: {
+                    id: logId,
+                    log: logText,
+                    date: createdAt,
+                    userId
+                }
+            })
+        }
+
         return await prisma.log.create({
             data: {
                 log: logText,
